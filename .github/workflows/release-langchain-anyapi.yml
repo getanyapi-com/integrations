@@ -1,0 +1,163 @@
+name: release langchain-anyapi
+
+# Publish langchain-anyapi to PyPI for a "langchain-anyapi-v*" tag.
+#
+# Flow: verify (full gate + tag/version match) -> publish -> smoke the exact
+# published version from a clean venv -> GitHub Release. This mirrors
+# getanyapi-com/sdks .github/workflows/release.yml, including its rule that
+# PyPI uses trusted publishing (OIDC, environment `pypi`) and NEVER falls back
+# to a token. Configure the PyPI trusted publisher instead of adding a secret.
+
+on:
+  push:
+    tags: ["langchain-anyapi-v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The version tag to release (e.g. langchain-anyapi-v0.1.0). Must already exist."
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: verify (full gate + version match)
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - name: resolve tag
+        id: resolve
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          case "$TAG" in
+            langchain-anyapi-v*) ;;
+            *) echo "tag '$TAG' does not start with 'langchain-anyapi-v'"; exit 1 ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#langchain-anyapi-v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.tag }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: assert tag matches the package version (lockstep)
+        working-directory: langchain-anyapi
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+        run: |
+          MANIFEST="$(python -c "import tomllib,pathlib;print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")"
+          if [ "$MANIFEST" != "$VERSION" ]; then
+            echo "tag version ($VERSION) does not match pyproject version ($MANIFEST)"
+            exit 1
+          fi
+          echo "version match: $VERSION"
+
+      - name: install package + dev deps
+        working-directory: langchain-anyapi
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: gate (ruff + mypy --strict + pytest)
+        working-directory: langchain-anyapi
+        run: |
+          ruff check .
+          ruff format --check .
+          mypy
+          pytest
+
+      - name: dash guard (no em or en dash glyphs)
+        run: bash scripts/check-dashes.sh
+
+  publish-pypi:
+    name: publish langchain-anyapi (PyPI, trusted publishing)
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write # PyPI trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify.outputs.tag }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: build sdist + wheel
+        working-directory: langchain-anyapi
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+      - name: publish via trusted publishing
+        # Fails with a clear message until the PyPI trusted publisher is
+        # configured. We do NOT fall back to a token; configure the publisher.
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: langchain-anyapi/dist
+
+  smoke:
+    name: smoke exact PyPI version
+    needs: [verify, publish-pypi]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify.outputs.tag }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: install the exact published version into a fresh venv and smoke it
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          smoke_dir="$(mktemp -d)"
+          python -m venv "$smoke_dir/venv"
+          "$smoke_dir/venv/bin/python" -m pip install --upgrade pip
+          for attempt in 1 2 3 4 5 6; do
+            if "$smoke_dir/venv/bin/python" -m pip install "langchain-anyapi==$VERSION"; then
+              break
+            fi
+            echo "PyPI has not served $VERSION yet (attempt $attempt); retrying"
+            sleep 20
+          done
+          cp "$GITHUB_WORKSPACE/langchain-anyapi/smoke.py" "$smoke_dir/smoke.py"
+          cd "$smoke_dir"
+          "$smoke_dir/venv/bin/python" smoke.py
+
+  github-release:
+    name: github release
+    needs: [verify, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify.outputs.tag }}
+          fetch-depth: 0
+      - name: create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.verify.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub Release $TAG already exists; recovery is complete."
+            exit 0
+          fi
+          # The tag's message body carries the change summary; fall back to a
+          # generic line for a manual tag with no structured body.
+          BODY="$(git log -1 --format=%b "$TAG" || true)"
+          if [ -z "$BODY" ]; then
+            BODY="Release $TAG."
+          fi
+          gh release create "$TAG" --title "$TAG" --notes "$BODY"
