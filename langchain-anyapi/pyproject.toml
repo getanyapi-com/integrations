@@ -34,7 +34,7 @@ dev = [
 [project.urls]
 Homepage = "https://getanyapi.com"
 Documentation = "https://getanyapi.com/docs"
-Issues = "https://github.com/getanyapi-com/agent-frameworks/issues"
+Issues = "https://github.com/getanyapi-com/integrations/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["langchain_anyapi"]
