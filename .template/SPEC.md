@@ -4,7 +4,7 @@
 
 Three independently published Python packages that let an agent framework call
 AnyAPI. Each one is a thin adapter over the ALREADY PUBLISHED official SDK
-`getanyapi` (PyPI, currently 0.35.3). Nothing here reimplements HTTP, auth,
+`getanyapi` (PyPI, currently 0.36.0). Nothing here reimplements HTTP, auth,
 retries, pricing, schema handling, or the customer-safety scan: those belong to
 `getanyapi` and to the gateway behind it.
 
@@ -73,7 +73,7 @@ each package must install standalone.
 from getanyapi import AnyAPI, AsyncAnyAPI, AnyAPIError
 c = AnyAPI(api_key=...)          # falls back to env ANYAPI_API_KEY
 c.catalog(category=None)          -> list[CatalogEntry]
-c.search(query=..., category=None, platform=None, limit=None) -> CatalogSearchResults
+c.search(query=None, category=None, platform=None, limit=None) -> CatalogSearchResults
 c.describe(slug)                  -> CatalogEntry   # carries inputSchema/outputSchema/latency
 c.run(slug, input, options=RequestOptions)          -> RunResult[Any]
 c.balance()                       -> Balance        # .usd
@@ -119,7 +119,7 @@ Build backend `hatchling`. `requires-python = ">=3.10"`. License MIT (the repo
 root `LICENSE` is the one copy; reference it, do not duplicate the text).
 Author `AnyAPI <support@getanyapi.com>`. Version `0.1.0`.
 
-Every package depends on `getanyapi>=0.35,<1` plus its own framework core.
+Every package depends on `getanyapi>=0.36,<1` plus its own framework core.
 
 `[project.urls]`: Homepage `https://getanyapi.com`, Documentation
 `https://getanyapi.com/docs`, Issues on the package repository.

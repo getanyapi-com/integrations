@@ -63,8 +63,8 @@ There is no quote tool here. The AnyAPI MCP server has one, but the published
 an authenticated HTTP call beside the SDK. `anyapi_get_api` already publishes
 `pricing.from.maxUsd`, the most a first-choice run is billed, and
 `pricing.failoverMaxUsd`, the ceiling for any run, so an agent can bound its
-spend before it calls. Two further differences from the MCP server's tools:
-search results carry no `heavy` marker, and search requires a query.
+spend before it calls. One further difference from the MCP server's tools:
+search results carry no `heavy` marker.
 
 ## Behavior worth knowing
 

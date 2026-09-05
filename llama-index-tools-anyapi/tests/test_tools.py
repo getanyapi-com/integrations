@@ -101,6 +101,64 @@ def test_search_returns_the_ranked_envelope(
     assert out["results"][0]["id"] == "reddit.trending_posts"
 
 
+def test_search_by_category_alone_reaches_the_sdk_with_no_query(
+    search_results: CatalogSearchResults,
+) -> None:
+    """`category` with no query enumerates that category."""
+    spec = AnyAPIToolSpec(api_key="offline")
+    client = wire(spec, StubClient(result=search_results))
+    out = spec.search_apis(category="social")
+    assert client.calls == [
+        (
+            "search",
+            {"query": None, "category": "social", "platform": None, "limit": None},
+        )
+    ]
+    assert out["results"][0]["id"] == "reddit.trending_posts"
+
+
+def test_search_by_platform_alone_reaches_the_sdk_with_no_query(
+    search_results: CatalogSearchResults,
+) -> None:
+    """`platform` with no query enumerates that platform."""
+    spec = AnyAPIToolSpec(api_key="offline")
+    client = wire(spec, StubClient(result=search_results))
+    out = spec.search_apis(platform="reddit")
+    assert client.calls == [
+        (
+            "search",
+            {"query": None, "category": None, "platform": "reddit", "limit": None},
+        )
+    ]
+    assert out["total"] == 1
+
+
+async def test_async_search_by_platform_alone_reaches_the_sdk_too(
+    search_results: CatalogSearchResults,
+) -> None:
+    """The async path carries the same optional query."""
+    spec = AnyAPIToolSpec(api_key="offline")
+    client = wire(spec, AsyncStubClient(result=search_results))
+    await spec.asearch_apis(platform="reddit")
+    assert client.calls == [
+        (
+            "search",
+            {"query": None, "category": None, "platform": "reddit", "limit": None},
+        )
+    ]
+
+
+def test_a_search_with_no_scope_at_all_is_the_sdk_error_payload() -> None:
+    """The "at least one" rule is enforced by the SDK below this package, and
+    its client-side AnyAPIError comes back as this package's error payload.
+    """
+    spec = AnyAPIToolSpec(api_key="offline")
+    assert spec.search_apis() == {
+        "error": "search needs at least one of query, category, or platform",
+        "status": 0,
+    }
+
+
 def test_list_apis_returns_summaries(entry: CatalogEntry) -> None:
     spec = AnyAPIToolSpec(api_key="offline")
     wire(spec, StubClient(result=[entry]))

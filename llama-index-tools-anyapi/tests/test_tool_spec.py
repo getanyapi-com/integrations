@@ -96,6 +96,23 @@ def test_run_api_schema_accepts_sku_id_and_input() -> None:
     assert "self" not in json.dumps(schema)
 
 
+def test_search_schema_derived_from_the_signature_does_not_require_a_query() -> None:
+    """LlamaIndex derives the parameter schema from the signature, so making
+    `query` optional there is what stops the schema demanding it. run_api still
+    requires its two, which is what proves the assertion is not vacuous.
+    """
+    tools = {
+        tool.metadata.get_name(): tool
+        for tool in AnyAPIToolSpec(api_key="not-used-offline").to_tool_list()
+    }
+    schema: dict[str, Any] = tools["search_apis"].metadata.get_parameters_dict()
+    assert schema.get("required", []) == []
+    assert set(schema["properties"]) == {"query", "category", "platform", "limit"}
+    assert schema["properties"]["query"]["default"] is None
+    run_schema = tools["run_api"].metadata.get_parameters_dict()
+    assert set(run_schema["required"]) == {"sku_id", "input"}
+
+
 def test_each_tool_has_both_a_sync_and_an_async_path() -> None:
     pairs = {
         "search_apis": "asearch_apis",

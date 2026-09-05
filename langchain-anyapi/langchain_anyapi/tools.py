@@ -25,10 +25,13 @@ from ._projection import detail_dict, run_dict, search_dict, summary_dict
 class SearchAPIsInput(BaseModel):
     """Arguments for a ranked search over the AnyAPI catalog."""
 
-    query: str = Field(
-        description="What you need data about, matched by meaning and keyword "
-        "across each API's name, slug, and description. For example "
-        "'reddit trending posts' or 'find a work email address'."
+    query: str | None = Field(
+        default=None,
+        description="Optional. What you need data about, matched by meaning "
+        "and keyword across each API's name, slug, and description. For "
+        "example 'reddit trending posts' or 'find a work email address'. Pass "
+        "at least one of query, category, or platform: a scope on its own is a "
+        "complete search, so category or platform with no query enumerates it.",
     )
     category: str | None = Field(
         default=None,
@@ -111,7 +114,7 @@ class AnyAPISearchAPIs(AnyAPIToolBase):
 
     def _run(
         self,
-        query: str,
+        query: str | None = None,
         category: str | None = None,
         platform: str | None = None,
         limit: int | None = None,
@@ -131,7 +134,7 @@ class AnyAPISearchAPIs(AnyAPIToolBase):
 
     async def _arun(
         self,
-        query: str,
+        query: str | None = None,
         category: str | None = None,
         platform: str | None = None,
         limit: int | None = None,

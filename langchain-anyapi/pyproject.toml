@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-anyapi"
-version = "0.1.0"
+version = "0.2.0"
 description = "LangChain tools for AnyAPI: hundreds of data and scraping APIs behind one key, billed per request in USD."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,7 +17,7 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Typing :: Typed",
 ]
-dependencies = ["getanyapi>=0.35,<1", "langchain-core>=1.6.1,<2.0.0"]
+dependencies = ["getanyapi>=0.36,<1", "langchain-core>=1.6.1,<2.0.0"]
 
 [project.optional-dependencies]
 # The release workflow installs the gate with `pip install -e ".[dev]"`, so the

@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 from getanyapi import AnyAPIError
+from haystack.utils import Secret
 
 from haystack_integrations.components.connectors.anyapi import (
     AnyAPIGetAPI,
@@ -76,6 +77,57 @@ def test_search_maps_the_ranked_page() -> None:
     assert match["relevance"] == 1.0
     assert "inputSchema" not in match
     assert client.calls == [("search", {"query": "reddit", "category": "social", "platform": "reddit", "limit": 5})]
+
+
+def test_search_by_category_alone_reaches_the_sdk_with_no_query() -> None:
+    """`category` with no query enumerates that category."""
+    component = AnyAPISearchAPIs()
+    client = FakeClient()
+    use_client(component, client)
+
+    out = component.run(category="social")
+
+    assert client.calls == [("search", {"query": None, "category": "social", "platform": None, "limit": None})]
+    assert out["error"] is None
+    assert out["results"][0]["id"] == "reddit.trending_posts"
+
+
+def test_search_by_platform_alone_reaches_the_sdk_with_no_query() -> None:
+    """`platform` with no query enumerates that platform."""
+    component = AnyAPISearchAPIs()
+    client = FakeClient()
+    use_client(component, client)
+
+    out = component.run(platform="reddit")
+
+    assert client.calls == [("search", {"query": None, "category": None, "platform": "reddit", "limit": None})]
+    assert out["error"] is None
+    assert out["total"] == 7
+
+
+def test_async_search_by_platform_alone_reaches_the_sdk_too() -> None:
+    """The async path carries the same optional query."""
+    component = AnyAPISearchAPIs()
+    client = FakeAsyncClient()
+    use_client(component, client)
+
+    asyncio.run(component.run_async(platform="reddit"))
+
+    assert client.calls == [("search", {"query": None, "category": None, "platform": "reddit", "limit": None})]
+
+
+def test_a_search_with_no_scope_at_all_is_the_sdk_error_payload() -> None:
+    """The "at least one" rule is enforced by the SDK below this package, and its
+    client-side AnyAPIError comes back on the ordinary ``error`` socket.
+    """
+    out = AnyAPISearchAPIs(api_key=Secret.from_token("offline")).run()
+
+    assert out == {
+        "results": [],
+        "total": 0,
+        "ranking": None,
+        "error": {"error": "search needs at least one of query, category, or platform", "status": 0},
+    }
 
 
 def test_search_async_matches_the_sync_path() -> None:
