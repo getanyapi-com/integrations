@@ -78,7 +78,7 @@ class AnyAPIToolSpec(BaseToolSpec):
 
     def search_apis(
         self,
-        query: str,
+        query: str | None = None,
         category: str | None = None,
         platform: str | None = None,
         limit: int | None = None,
@@ -97,7 +97,7 @@ class AnyAPIToolSpec(BaseToolSpec):
 
     async def asearch_apis(
         self,
-        query: str,
+        query: str | None = None,
         category: str | None = None,
         platform: str | None = None,
         limit: int | None = None,
@@ -205,7 +205,7 @@ _ARGS: dict[str, str] = {
     "search_apis": """
 
 Args:
-    query (str): What to look for in the AnyAPI catalog, in plain words or keywords.
+    query (Optional[str]): What to look for in the catalog, in plain words or keywords.
     category (Optional[str]): Restrict matches to one catalog category.
     platform (Optional[str]): Restrict matches to one platform id, such as reddit.
     limit (Optional[int]): Cap the matches returned. Default 25, maximum 50.

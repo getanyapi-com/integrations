@@ -64,10 +64,17 @@ def test_balance_takes_no_parameters() -> None:
     assert "required" not in schema
 
 
-def test_search_parameter_schema_requires_only_a_query() -> None:
-    """Search has no browse-everything mode; list does."""
-    assert _tool("anyapi_search_apis").parameters["required"] == ["query"]
+def test_search_parameter_schema_requires_nothing() -> None:
+    """A scope on its own is a complete search, so no search argument is mandatory.
+
+    `anyapi_run_api` still requires its two, which is what proves this assertion is
+    not vacuous.
+    """
+    search = _tool("anyapi_search_apis").parameters
+    assert search.get("required", []) == []
+    assert set(search["properties"]) == {"query", "category", "platform", "limit"}
     assert "required" not in _tool("anyapi_list_apis").parameters
+    assert sorted(_tool("anyapi_run_api").parameters["required"]) == ["input", "slug"]
 
 
 @pytest.mark.parametrize("name", EXPECTED_NAMES)

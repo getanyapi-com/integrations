@@ -5,9 +5,9 @@ agent gets wrong: that search and browse results carry no input schema, so
 ``get_api`` must be called before the first ``run_api`` on an API; that every
 input schema is strict, so an invented field name fails the call; and that a
 catalog price is quoted per 1,000 requests to a person while a per-call charge
-is quoted per request. Three deliberate departures from that wording are
-recorded in the package README: there is no quote tool, search results carry no
-``heavy`` marker, and search requires a query.
+is quoted per request. Two deliberate departures from that wording are
+recorded in the package README: there is no quote tool, and search results
+carry no ``heavy`` marker.
 """
 
 INSTRUCTIONS = (
@@ -43,8 +43,10 @@ LIST_APIS = (
 SEARCH_APIS = (
     "Search APIs by meaning and keyword across name, slug, and description, "
     "returning matches WITH their descriptions (schemas omitted), ranked most "
-    "relevant first. Pass `query`, and optionally narrow with `category` or "
-    "`platform`. Add `limit` to cap matches (default 25, maximum 50). Each "
+    "relevant first. Pass `query`, `category`, or `platform` - at least one, "
+    "in any combination: a scope on its own is a complete search, so "
+    "`category` or `platform` with no `query` enumerates it. Add `limit` to "
+    "cap matches (default 25, maximum 50). Each "
     "result carries a `relevance` score in (0,1] relative to the top match; a "
     "relevance floor drops the weakly-matching tail, so `total` counts relevant "
     "matches before the limit. `ranking` says whether meaning-based ('semantic') "

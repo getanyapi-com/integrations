@@ -95,7 +95,7 @@ per-call charge is reported as `cost_usd` for that one request.
 `provider` is always `AnyAPI`. A lane may name a dataset brand or an anonymous
 source, and that is the only other source identity you will see.
 
-## Three deliberate departures from the MCP server
+## Two deliberate departures from the MCP server
 
 - **There is no quote tool.** The MCP server has `quote_api`, but the published
   `getanyapi` SDK exposes no quote method, and adding one would mean hand-rolling
@@ -105,8 +105,6 @@ source, and that is the only other source identity you will see.
   before the call.
 - **Search results carry no `heavy` marker.** The gateway's ranked search does not
   publish one. `AnyAPIListAPIs` and `AnyAPIGetAPI` do.
-- **Search requires a query.** `AnyAPISearchAPIs` has no browse-everything mode;
-  use `AnyAPIListAPIs` for that.
 
 ## Errors
 

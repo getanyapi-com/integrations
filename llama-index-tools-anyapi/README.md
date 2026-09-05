@@ -79,11 +79,10 @@ any run of that API, so an agent can bound its spend before calling.
 ## Departures from the AnyAPI MCP server
 
 The tool descriptions are the MCP server's own wording, because it already
-encodes what agents get wrong. Four things differ here:
+encodes what agents get wrong. Three things differ here:
 
 - there is no quote tool, for the reason above;
 - search results carry no `heavy` marker;
-- search requires a query;
 - the MCP server names its tools `anyapi_search_apis`, `anyapi_get_api` and so
   on, and the shared wording is written that way. Here the tool spec is the
   namespace, so the tools are `search_apis`, `list_apis`, `get_api`, `run_api`

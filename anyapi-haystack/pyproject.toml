@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anyapi-haystack"
-version = "0.1.0"
+version = "0.2.0"
 description = "Haystack components and tools for AnyAPI: one key, hundreds of data and scraping APIs, billed per request in USD."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,7 +22,7 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Typing :: Typed",
 ]
-dependencies = ["haystack-ai>=3.1,<4", "getanyapi>=0.35,<1"]
+dependencies = ["haystack-ai>=3.1,<4", "getanyapi>=0.36,<1"]
 
 [project.optional-dependencies]
 dev = ["mypy>=1.11", "pytest>=8", "ruff>=0.6"]

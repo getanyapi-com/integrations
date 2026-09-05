@@ -116,7 +116,7 @@ class FakeClient:
     def search(
         self,
         *,
-        query: str,
+        query: str | None = None,
         category: str | None = None,
         platform: str | None = None,
         limit: int | None = None,

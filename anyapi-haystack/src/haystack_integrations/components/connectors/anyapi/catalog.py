@@ -17,7 +17,7 @@ from ._projection import detail_dict, error_dict, search_dict, summary_dict
 
 @component
 class AnyAPISearchAPIs(AnyAPIComponent):
-    """Rank the AnyAPI catalog against a query, keeping descriptions and omitting schemas.
+    """Rank the AnyAPI catalog against a query or a scope, keeping descriptions and omitting schemas.
 
     Free, never billed.
 
@@ -38,14 +38,16 @@ class AnyAPISearchAPIs(AnyAPIComponent):
     )
     def run(
         self,
-        query: str,
+        query: str | None = None,
         category: str | None = None,
         platform: str | None = None,
         limit: int | None = None,
     ) -> dict[str, Any]:
         """Search the catalog.
 
-        :param query: What the caller is looking for, matched against name, slug, and description.
+        :param query: Optional. What the caller is looking for, matched against name, slug, and description.
+            Pass at least one of ``query``, ``category``, or ``platform``: a scope on its own is a
+            complete search, so ``category`` or ``platform`` with no ``query`` enumerates it.
         :param category: Optional category to narrow the search to.
         :param platform: Optional platform id to narrow the search to.
         :param limit: Optional cap on returned matches. The gateway default is 25 and its maximum is 50.
@@ -65,14 +67,16 @@ class AnyAPISearchAPIs(AnyAPIComponent):
     )
     async def run_async(
         self,
-        query: str,
+        query: str | None = None,
         category: str | None = None,
         platform: str | None = None,
         limit: int | None = None,
     ) -> dict[str, Any]:
         """Search the catalog over the asynchronous SDK client.
 
-        :param query: What the caller is looking for, matched against name, slug, and description.
+        :param query: Optional. What the caller is looking for, matched against name, slug, and description.
+            Pass at least one of ``query``, ``category``, or ``platform``: a scope on its own is a
+            complete search, so ``category`` or ``platform`` with no ``query`` enumerates it.
         :param category: Optional category to narrow the search to.
         :param platform: Optional platform id to narrow the search to.
         :param limit: Optional cap on returned matches. The gateway default is 25 and its maximum is 50.

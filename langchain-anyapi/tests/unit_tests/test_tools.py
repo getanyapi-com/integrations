@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 from langchain_core.messages import ToolCall, ToolMessage
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_anyapi import (
     AnyAPIGetAPI,
@@ -106,6 +107,67 @@ def test_search_passes_its_arguments_and_projects_the_page() -> None:
     assert out["total"] == 1
     assert out["ranking"] == "semantic"
     assert out["results"][0]["id"] == "reddit.trending_posts"
+
+
+def test_search_schema_does_not_require_a_query() -> None:
+    """The model-facing schema must not mark `query` required.
+
+    A scope on its own is a complete search. anyapi_run_api still requires its
+    two arguments, which is what proves this assertion is not vacuous.
+    """
+    parameters = convert_to_openai_tool(AnyAPISearchAPIs())["function"]["parameters"]
+    assert parameters.get("required", []) == []
+    description = parameters["properties"]["query"]["description"]
+    assert "at least one of query, category, or platform" in description
+    run_parameters = convert_to_openai_tool(AnyAPIRunAPI())["function"]["parameters"]
+    assert sorted(run_parameters["required"]) == ["input", "sku_id"]
+
+
+def test_search_by_category_alone_reaches_the_sdk_with_no_query() -> None:
+    """`category` with no query enumerates that category."""
+    client = FakeClient()
+    out = with_client(AnyAPISearchAPIs(), client).invoke({"category": "social"})
+    assert client.calls[0] == (
+        "search",
+        {"query": None, "category": "social", "platform": None, "limit": None},
+    )
+    assert out["results"][0]["id"] == "reddit.trending_posts"
+
+
+def test_search_by_platform_alone_reaches_the_sdk_with_no_query() -> None:
+    """`platform` with no query enumerates that platform."""
+    client = FakeClient()
+    out = with_client(AnyAPISearchAPIs(), client).invoke({"platform": "reddit"})
+    assert client.calls[0] == (
+        "search",
+        {"query": None, "category": None, "platform": "reddit", "limit": None},
+    )
+    assert out["results"][0]["id"] == "reddit.trending_posts"
+
+
+@pytest.mark.asyncio
+async def test_async_search_by_platform_alone_reaches_the_sdk_too() -> None:
+    """The async path carries the same optional query."""
+    client = AsyncFakeClient()
+    tool = with_async_client(AnyAPISearchAPIs(), client)
+    await tool.ainvoke({"platform": "reddit"})
+    assert client.calls[0] == (
+        "search",
+        {"query": None, "category": None, "platform": "reddit", "limit": None},
+    )
+
+
+def test_a_search_with_no_scope_at_all_is_the_sdk_error_payload() -> None:
+    """A search with nothing at all is the SDK's own client-side refusal.
+
+    The "at least one" rule is enforced below this package, and its AnyAPIError
+    comes back as this package's ordinary error payload.
+    """
+    out = AnyAPISearchAPIs(api_key="offline").invoke({})
+    assert out == {
+        "error": "search needs at least one of query, category, or platform",
+        "status": 0,
+    }
 
 
 def test_list_browses_a_category() -> None:
